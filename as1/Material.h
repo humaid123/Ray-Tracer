@@ -8,6 +8,14 @@
 // I have three types of materials => a blinn_phong/reflective, glassy/refractive, light_emitter/my light source is an object in the scene
 enum MatTypes { blinn_phong, glassy, light_emitter };
 
+/*
+values of p
+10—“eggshell”;
+100—mildly shiny;
+1000—really glossy;
+10,000—nearlymirror-like.
+*/
+
 struct ScatterRec {
     Ray ray_to_trace;
     Color local_color;
@@ -28,7 +36,12 @@ class Material {
         // used for the swtich statement => I added a way for reflection, for refraction and for emission
         virtual MatTypes type() const = 0;
     public:
-        float ka, ks, kd, km, p;
+        float ka, // ambience
+        km, // reflectivity
+        kd, // diffusion
+        ks, p;   // specular highlights
+        //ke; // how much of the light to reflect
+        
 };
 // this is a matte material => it scatters ray in a random direction
 class Matte : public Material {
@@ -36,15 +49,17 @@ class Matte : public Material {
         Matte(const Color& a) 
             : texture(make_shared<SolidColor>(a)) {
             ka = 0.1;
-            kd = 0.2;
+            kd = 0.6;
             km = 0.1;
             ks = 0.05;
+            p = 10;
         }
         Matte(shared_ptr<Texture> a) : texture(a) {
             ka = 0.1;
-            kd = 0.2;
+            kd = 0.6;
             km = 0.1;
             ks = 0.05;
+            p = 10;
         }
         
         virtual ScatterRec scatter(const Ray& r_in, const HitRecord& rec) const override {
@@ -71,8 +86,9 @@ class Metal : public Material {
         Metal(const Color& a) : texture(make_shared<SolidColor>(a))  {
             ka = 0.01;
             kd = 0.01;
-            km = 1.0;
+            km = 0.85;
             ks = 0.1;
+            p = 10000;
         }
 
         Metal(const Color& a, float _km) : texture(make_shared<SolidColor>(a))  {
@@ -80,6 +96,7 @@ class Metal : public Material {
             kd = 0.01;
             km = _km;
             ks = 0.1;
+            p = 10000;
         }
 
         virtual ScatterRec scatter(const Ray& r, const HitRecord& rec) const override {
@@ -107,16 +124,17 @@ class Metal : public Material {
 };
 
 // this material has a fuzzy reflection
-// fuzz = 0 => perfect reflection
-// fuzz = 1 => matte
+// fuzz = 1 => perfect reflection
+// fuzz = 0 => matte
 class FuzzyMetal : public Material {
     public:
         FuzzyMetal(const Color& a, double f) 
         : texture(make_shared<SolidColor>(a)), fuzz(f < 1 ? f : 1) {
             ka = 0.1;
-            kd = 0.1;
-            km = 0.1;
+            kd = 0.4;
+            km = f;
             ks = 0.9;
+            p = 1000;
         }
 
         virtual ScatterRec scatter(const Ray& r, const HitRecord& rec) const override {
@@ -166,7 +184,7 @@ class Dielectric : public Material {
             bool cannot_refract = refraction_ratio * sin_theta > 1.0;
             Vec3 direction;
 
-            // reflectance check allows reflectivity based  on the viewing angle
+            // Sometimes we reflect, sometimes we refract based on whether we cannot refract or the reflectance
             if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double())
                 direction = reflect(unit_direction, rec.normal);
             else
@@ -196,12 +214,16 @@ class Dielectric : public Material {
 // material that can emit light => we have an area light kind of effect...
 class DiffuseLight : public Material  {
     public:
-        DiffuseLight(shared_ptr<Texture> a) : emit(a) {}
-        DiffuseLight(Color c) : emit(make_shared<SolidColor>(c)) {}
+        DiffuseLight(shared_ptr<Texture> a) : emit(a) {
+            kd = 0.7; // add some shape
+        }
+        DiffuseLight(Color c) : emit(make_shared<SolidColor>(c)) {
+            kd = 0.7; // add some shape
+        }
 
-        virtual ScatterRec scatter(const Ray& r_in, const HitRecord& rec) const override {
+        virtual ScatterRec scatter(const Ray& r, const HitRecord& rec) const override {
             ScatterRec res;
-            return res; // is never called
+            return res; // never called
         }
 
         virtual Color emitted(double u, double v, const Point3& p) const override {

@@ -20,8 +20,8 @@ public:
         return object->hit(r, t_min, t_max, rec);
     }
 
-    virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
-        return object->bounding_box(time0, time1, output_box);
+    virtual bool bounding_box(aabb& output_box) const override {
+        return object->bounding_box(output_box);
     }
 
     virtual std::string name() const override {
@@ -64,14 +64,14 @@ public:
         return hit_anything;
     }
         
-    virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+    virtual bool bounding_box(aabb& output_box) const override {
         if (lights.empty()) return false;
 
         aabb temp_box;
         bool first_box = true;
 
         for (const auto& light : lights) {
-            if (!light->bounding_box(time0, time1, temp_box)) return false;
+            if (!light->bounding_box(temp_box)) return false;
             output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
             first_box = false;
         }

@@ -12,7 +12,7 @@ class Sphere : public Hittable {
         : center(cen), radius(r), mat_ptr(m) {};
 
         virtual bool hit(const Ray& r, double t_min, double t_max, HitRecord& rec) const override;
-        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
+        virtual bool bounding_box(aabb& output_box) const override;
         
         virtual std::string name() const override {
             return "sphere";
@@ -42,7 +42,7 @@ class Sphere : public Hittable {
         }
 };
 
-bool Sphere::bounding_box(double time0, double time1, aabb& output_box) const {
+bool Sphere::bounding_box(aabb& output_box) const {
     output_box = aabb(
         center - Vec3(radius, radius, radius),
         center + Vec3(radius, radius, radius));

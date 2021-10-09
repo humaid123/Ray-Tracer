@@ -37,7 +37,7 @@ class xy_rect : public Hittable {
             return true;
         }
 
-        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+        virtual bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the Z
             // dimension a small amount.
             output_box = aabb(Point3(x0,y0, k-0.0001), Point3(x1, y1, k+0.0001));
@@ -86,7 +86,7 @@ class xz_rect : public Hittable {
             return true;
         }
 
-        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+        virtual bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the Y
             // dimension a small amount.
             output_box = aabb(Point3(x0,k-0.0001,z0), Point3(x1, k+0.0001, z1));
@@ -132,7 +132,7 @@ class yz_rect : public Hittable {
             return true;
         }
 
-        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+        virtual bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the X
             // dimension a small amount.
             output_box = aabb(Point3(k-0.0001, y0, z0), Point3(k+0.0001, y1, z1));

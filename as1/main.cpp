@@ -9,6 +9,7 @@
 #include <iostream>
 #include "RayTracer.h"
 #include "Image.h"
+#include "BVH.h"
 
 /*
 // considering materials and reflectance
@@ -41,50 +42,66 @@ public:
 
 Scene cornell_box() {
     Scene scene;
+    auto cube_side = 555; // can change the size of the box right here
 
     // light sources
     auto light = make_shared<DiffuseLight>(Color(1, 1, 1));
-    // light sphere
+    
+    // far away light
     Point3 light_position(80, 200, -800);
     shared_ptr<Hittable> light_object = make_shared<Sphere>(light_position, 20, light);
     scene.light_sources.add(make_shared<LightSource>(light_position, light_object));
-
+    
     // light sphere inside the room
-    Point3 second_light_position(80, 400, 450);
-    shared_ptr<Hittable> second_light_object = make_shared<Sphere>(second_light_position, 50, light);
-    scene.light_sources.add(make_shared<LightSource>(second_light_position, second_light_object));
-
-
+    Point3 third_light_position(80, 400, 350);
+    shared_ptr<Hittable> third_light_object = make_shared<Sphere>(third_light_position, 50, light);
+    scene.light_sources.add(make_shared<LightSource>(third_light_position, third_light_object));
+    
+    double size_light = cube_side/3;
+    shared_ptr<xz_rect> light_rect = make_shared<xz_rect>(
+            cube_side/2 - size_light/2, 
+            cube_side/2 + size_light/2,  // x points from right to left, y points along vertical, z points deeper into the box..
+            cube_side/2 - size_light/2, 
+            cube_side/2 + size_light/2, 
+            cube_side - 10, light);
+    // center of the room
+    Point3 second_light_position(
+        (light_rect->x0 + light_rect->x1) / 2,
+        cube_side - 10,
+        (light_rect->z0 + light_rect->z1) / 2
+    );
+    scene.light_sources.add(make_shared<LightSource>(second_light_position, light_rect)); 
+    
     // objects
     // colors the colors are actual B G R
-    auto red = Color(0.5, 0.5, 0.65);
-    auto green = Color(0.15, 0.45, 0.12);
-    auto blue = Color(0.97, 0.83, 0.5);
-    auto white = Color(0.9, 0.9, 0.9);
+    auto red = Color(0.3, 0.3, 0.85);
+    auto green = Color(0.15, 0.65, 0.12);
+    auto blue = Color(0.97, 0.63, 0.3);
+    auto light_blue = Color(0.77, 0.43, 0.1);
+    auto white = Color(0.9, 0.85, 0.9);
     auto black = Color(0, 0, 0);
 
     // Materials --- I made all materials have default ka, kd, km, ks, p that I wanted
     auto red_matte   = make_shared<Matte>(red);
-    auto white_matte = make_shared<Matte>(white);
-    auto green_matte = make_shared<Metal>(green, 0.3);
-    auto black_matte = make_shared<Metal>(black, 0.3);
-    auto blue_matte = make_shared<Metal>(blue, 0.3); 
+    auto white_metal = make_shared<FuzzyMetal>(white, 0.1);
+    auto green_matte = make_shared<Matte>(green);
+    //auto black_metal = make_shared<Metal>(black);
+    auto blue_metal = make_shared<Metal>(blue, 0.1); 
     auto lime_fuzzy = make_shared<FuzzyMetal>(green, 0.5);
-    auto blue_reflective = make_shared<Metal>(blue);
-
-    auto cube_side = 555; // can change the size of the box right here
+    auto blue_reflective = make_shared<Metal>(light_blue);
 
     // the sides
     // give (x0, y0) and (x1, y1)
     scene.objects.add(make_shared<yz_rect>(0, cube_side, 0, cube_side, cube_side, green_matte));
     scene.objects.add(make_shared<yz_rect>(0, cube_side, 0, cube_side, 0, red_matte));
+
     // roof
-    scene.objects.add(make_shared<xz_rect>(0, cube_side, 0, cube_side, cube_side, white_matte));
+    scene.objects.add(make_shared<xz_rect>(0, cube_side, 0, cube_side, cube_side, white_metal));
     // back, I need the back to be a color the light sphere to show
-    scene.objects.add(make_shared<xy_rect>(0, cube_side, 0, cube_side, cube_side, blue_matte));
+    scene.objects.add(make_shared<xy_rect>(0, cube_side, 0, cube_side, cube_side, blue_metal));
     
     // box => give llc and urc
-    scene.objects.add(make_shared<Box>(Point3(300, 200, 200), Point3(400, 365, 430), white_matte));
+    scene.objects.add(make_shared<Box>(Point3(300, 200, 200), Point3(400, 365, 430), white_metal));
 
     // make floor textured
     auto num_squares_along_side = 20; // can change the grid pattern
@@ -102,18 +119,17 @@ Scene cornell_box() {
     scene.objects.add(make_shared<Sphere>(Point3(385, 80, 195), 80, glass));
 
     // small sphere / mesh 
-    scene.objects.add(make_shared<Sphere>(Point3(90, 40, 60), 40, green_matte));
-
+    scene.objects.add(make_shared<Sphere>(Point3(90, 40, 60), 40, lime_fuzzy));
     return scene;
 }
 
 int main() {
     // Image
     const auto aspect_ratio = 1.0;
-    const int image_width = 100;
+    const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 50; // this needs to be a very big number to remove graininess, Peter used 10000, we need to consider bvh and cuda
-    const int max_depth = 100;
+    const int samples_per_pixel = 15; // this needs to be a very big number to remove graininess, Peter used 10000, we need to consider bvh and cuda
+    const int max_depth = 10;
 
     // World
     Scene scene = cornell_box();
@@ -132,7 +148,8 @@ int main() {
     float focus_dist = 1.0;
 
     // some ambient light
-    Color background(0.2, 0.2, 0.2);
+    //Color background(0.2, 0.2, 0.2);
+    Color background(0, 0, 0);
 
     Camera cam(lookfrom, lookat, vup, 40.0, aspect_ratio, 0.01, focus_dist);
 
@@ -141,7 +158,7 @@ int main() {
     Image image(image_height, image_width);
 
     // encapsulates blinn_phong, refraction, light object
-    RayTracer raytracer(background, scene.objects, scene.light_sources); 
+    RayTracer raytracer(background, BVH(scene.objects), scene.light_sources); 
 
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;

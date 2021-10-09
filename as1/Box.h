@@ -29,7 +29,7 @@ class Box : public Hittable  {
             return sides.hit(r, t_min, t_max, rec);
         }
 
-        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+        virtual bool bounding_box(aabb& output_box) const override {
             output_box = aabb(box_min, box_max);
             return true;
         }

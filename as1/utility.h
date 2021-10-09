@@ -29,6 +29,7 @@ inline double degrees_to_radians(double degrees) {
 }
 */
 
+
 inline double random_double() {
     // Returns a random real in [0,1).
     // rand gives an integer between 0 to RAND_MAX, divide to get a real
