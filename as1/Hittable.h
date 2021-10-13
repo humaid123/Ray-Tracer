@@ -4,6 +4,19 @@
 #include "utility.h"
 #include "aabb.h"
 #include "string.h"
+
+/*
+File defines what a SURFACE is.
+I used Hittable as per Peter Shirley but this is just an abstract class/interface for 
+any geometric primitive that we might want to use in a scene
+
+We also define the HitRecord object which will be passed by reference to each object
+until we get the closest hit
+
+My hittable object also has a name() method which can be used for debugging
+and a random_surface_point() which is used to do area_lights.
+*/
+
 // Cannot do this as circular dependency => #include "Material.h"
 class Material; // alerts the C++ compiler that material is a class
 
@@ -12,7 +25,7 @@ struct HitRecord {
     Vec3 normal;
     shared_ptr<Material> mat_ptr;
     double t;
-    bool front_face;
+    bool front_face; // says if the normal is pointing inwards or outwards
 
     // (u, v) coordinates for textures
     double u;
@@ -34,6 +47,12 @@ class Hittable {
         
         // function used when debugging => makes a hittable print out its name if it was hit
         virtual std::string name() const = 0;
+
+        virtual Vec3 random_surface_point() const = 0;
+        /* {
+            std::cerr << "Object " << name() << " does not support random_surface_point()\n";
+            return Vec3(0, 0, 0);
+        }*/
 };
 
 #endif

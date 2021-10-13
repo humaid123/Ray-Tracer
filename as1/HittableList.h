@@ -10,6 +10,14 @@
 using std::shared_ptr;
 using std::make_shared;
 
+/*
+File defines a list of Hittable objects
+Encapsulates a vector of hittable pointers
+
+And is where the for-loop for O(N) ray intersection is found
+    We can define a scene as a Hittable list of objects or boxes as a hittable list of rectangles
+*/
+
 class HittableList : public Hittable {
     public:
         HittableList() {}
@@ -24,6 +32,11 @@ class HittableList : public Hittable {
 
         virtual std::string name() const override {
             return "hittable list";
+        }
+        
+        virtual Vec3 random_surface_point() const override {
+            int which = random_int(0, objects.size());
+            return objects[which]->random_surface_point();
         }
 
     public:

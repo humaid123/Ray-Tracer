@@ -5,6 +5,11 @@
 #include "Vec3.h"
 #include "string.h"
 
+/*
+Defines a sphere as per the notes.
+Solves a quadratic equation to test for intersection...
+*/
+
 class Sphere : public Hittable {
     public:
         Sphere() {}
@@ -18,6 +23,9 @@ class Sphere : public Hittable {
             return "sphere";
         }
 
+        virtual Vec3 random_surface_point() const override {
+            return center + radius * random_in_unit_sphere();
+        }
 
     public:
         Point3 center;
@@ -54,7 +62,6 @@ bool Sphere::hit(const Ray& r, double t_min, double t_max, HitRecord& rec) const
     auto a = r.direction().squaredNorm();
     auto half_b = oc.dot(r.direction());
     auto c = oc.squaredNorm() - radius*radius;
-
     auto discriminant = half_b*half_b - a*c;
     if (discriminant < 0) return false;
     auto sqrtd = sqrt(discriminant);

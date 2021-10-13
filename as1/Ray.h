@@ -3,6 +3,10 @@
 
 #include "Vec3.h"
 
+/*
+Defines a simple ray which is two vectors, an origin and direction
+*/
+
 class Ray {
     public:
         Ray() {}

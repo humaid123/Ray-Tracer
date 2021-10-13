@@ -10,51 +10,36 @@
 #include <iostream>
 #include "aabb.h"
 
-class LightSource : Hittable {
-public:
-    LightSource() {}
+/*
+My light sources are an area of hittable objects with Diffuse Light materials
 
-    LightSource(Point3 _pos, shared_ptr<Hittable> _object) : pos(_pos), object(_object) {}
-    
-    virtual bool hit(const Ray& r, double t_min, double t_max, HitRecord& rec) const override {
-        return object->hit(r, t_min, t_max, rec);
-    }
+they additionally have a way to generate random surface points
 
-    virtual bool bounding_box(aabb& output_box) const override {
-        return object->bounding_box(output_box);
-    }
+the lightsources object generate a user-defined amount number of points from each light source and we use
+this to have an area light
 
-    virtual std::string name() const override {
-        return object->name();
-    }
-
-    Vec3 position() {
-        return pos;
-    }
-    
-private:
-    Vec3 pos;
-    shared_ptr<Hittable> object;
-};
+It is also a hittable object so that we can compute shadow ray intersections
+*/
 
 class LightSources : Hittable {
 public:
+    
     LightSources() {}
-    LightSources(shared_ptr<LightSource> object) { add(object); }
+    
+    LightSources(shared_ptr<Hittable> object) { add(object); }
 
     void clear() { lights.clear(); }
-    void add(shared_ptr<LightSource> object) { lights.push_back(object); }
+
+    void add(shared_ptr<Hittable> object) { lights.push_back(object); }
 
     virtual bool hit(const Ray& r, double t_min, double t_max, HitRecord& rec) const override {
         HitRecord temp_rec;
         bool hit_anything = false;
         auto closest_so_far = t_max;
 
-        // instead oh infinty for tmax, we use the closest poiny so far, this is why hit takes tmax
+        // instead oh infinity for tmax, we use the closest poiny so far, this is why hit starts with tmax
         for (const auto& light : lights) {
-            //std::cout << "object is a " << object->name() << "\n";
             if (light->hit(r, t_min, closest_so_far, temp_rec)) {
-                //std::cout << "object hit\n";
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 rec = temp_rec;
@@ -79,21 +64,28 @@ public:
         return true;
     }
 
-    std::vector<Vec3> positions() const {
-        std::vector<Vec3> light_positions;
-
-        for (const auto& light : lights) {
-            light_positions.push_back(light->position());
-        }
-        return light_positions;
-    }
-
     virtual std::string name() const override {
         return "lights";
     }
 
+    std::vector<Point3> generate_random_positions(int num_light_samples) const {
+        std::vector<Point3> res;
+
+        // jitter for every other light sources
+        for (const auto &light : lights) {
+            for (int i = 0; i < num_light_samples; i ++) {
+                res.push_back(light->random_surface_point());
+            }
+        }
+        return res;
+    }
+
+    virtual Vec3 random_surface_point() const override {
+        int which = random_int(0, lights.size());
+        return lights[which]->random_surface_point();
+    }
 private:
-    std::vector<shared_ptr<LightSource>> lights;
+    std::vector<shared_ptr<Hittable>> lights;
 };
 
 #endif

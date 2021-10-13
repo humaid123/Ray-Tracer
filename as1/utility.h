@@ -20,15 +20,11 @@ const double infinity = std::numeric_limits<double>::infinity();
 const double pi = 3.1415926535897932385;
 const float epsilon = 0.0001;
 
-// Utility Functions
-
-/*
-dont need as we wont do the vfov thing
 inline double degrees_to_radians(double degrees) {
     return degrees * pi / 180.0;
 }
-*/
 
+// random number generators
 
 inline double random_double() {
     // Returns a random real in [0,1).
@@ -51,11 +47,14 @@ inline int random_int(int min, int max) {
 #include "Ray.h"
 #include "Vec3.h"
 
+// ways to generate vectors
+
+// to scatter
 inline static Vec3 random(double min, double max) {
     return Vec3(random_double(min,max), random_double(min,max), random_double(min,max));
 }
 
-// IMPORTANT FUNCTIONS
+// to generate fuzziness for a sphere
 Vec3 random_in_unit_sphere() {
     while (true) {
         auto p = random(-1,1);
@@ -64,6 +63,7 @@ Vec3 random_in_unit_sphere() {
     }
 }
 
+// to add randomness to a vector
 Vec3 random_unit_vector() {
     Vec3 res = (random_in_unit_sphere());
     res.normalize();

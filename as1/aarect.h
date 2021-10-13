@@ -8,9 +8,15 @@
 this file defines axis aligned rectangles.
 It allows us to define an x=k, y=k or z=k rectangle
 aligning 6 such rectangles create a box
+
+To build an axis aligned rectangle only the z-axis for example
+     => we just need to store a value k for z= k
+     => we need to  store the llc and urc to know which range is fine => (x0, y0) to (x1, y1)
+     to intersect => we do plane intersection, then check the range
+     a boudning box => just need to give some space around k
 */
 
-// z=k rectangle
+// z=k rectangle in region (x0, x1) to (y0, y1)
 class xy_rect : public Hittable {
     public:
         xy_rect() {}
@@ -38,14 +44,21 @@ class xy_rect : public Hittable {
         }
 
         virtual bool bounding_box(aabb& output_box) const override {
-            // The bounding box must have non-zero width in each dimension, so pad the Z
-            // dimension a small amount.
-            output_box = aabb(Point3(x0,y0, k-0.0001), Point3(x1, y1, k+0.0001));
+            // need to pad around to give it some thickness
+            output_box = aabb(Point3(x0,y0, k-epsilon), Point3(x1, y1, k+epsilon));
             return true;
         }
 
         virtual std::string name() const override {
             return "xy rect";
+        }
+
+        virtual Vec3 random_surface_point() const override {
+            return Vec3(
+                x0 + (x1-x0) * random_double(0, 1),
+                y0 + (y1-y0) * random_double(0, 1), 
+                k
+            );
         }
 
     public:
@@ -64,18 +77,16 @@ class xz_rect : public Hittable {
 
         virtual bool hit(const Ray& r, double t_min, double t_max, HitRecord& rec) const override {
             auto t = ( k - r.origin().y()) / r.direction().y(); // check y component for t
-            //std::cout << "t:" << t << "\n"; //<< r.origin().y() << " " << r.direction().y() << "\n";
-            if (t < t_min || t > t_max)    return false;
-    
+
+            if (t < t_min || t > t_max)  return false;
+
             // see if within the range
             auto x = r.origin().x() + t*r.direction().x();
             auto z = r.origin().z() + t*r.direction().z();
-            //std::cout << "x:" << x << "z" <<  z <<"\n";
-            //std::cout << x0 << " " << x << " " << x1 << "\n";
-            //std::cout << z0 << " " << z << " " << z1 << "\n";
+
             if (x < x0 || x > x1 || z < z0 || z > z1) return false;
 
-            //std::cout << "reached after checks\n";
+            // scale u, v in range (0, 1) in case we want to apply a texture
             rec.u = (x-x0)/(x1-x0);
             rec.v = (z-z0)/(z1-z0);
             rec.t = t;
@@ -89,12 +100,20 @@ class xz_rect : public Hittable {
         virtual bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the Y
             // dimension a small amount.
-            output_box = aabb(Point3(x0,k-0.0001,z0), Point3(x1, k+0.0001, z1));
+            output_box = aabb(Point3(x0,k-epsilon,z0), Point3(x1, k+epsilon, z1));
             return true;
         }
 
         virtual std::string name() const override {
             return "xz rect";
+        }
+
+        virtual Vec3 random_surface_point() const override {
+            return Vec3(
+                x0 + (x1-x0) * random_double(0, 1),
+                k,
+                z0 + (z1-z0) * random_double(0, 1)
+            );
         }
 
     public:
@@ -135,12 +154,19 @@ class yz_rect : public Hittable {
         virtual bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the X
             // dimension a small amount.
-            output_box = aabb(Point3(k-0.0001, y0, z0), Point3(k+0.0001, y1, z1));
+            output_box = aabb(Point3(k-epsilon, y0, z0), Point3(k+epsilon, y1, z1));
             return true;
         }
 
         virtual std::string name() const override {
             return "yz rect";
+        }
+        virtual Vec3 random_surface_point() const override {
+            return Vec3(
+                k,
+                y0 + (y1-y0) * random_double(0, 1), 
+                z0 + (z1-z0) * random_double(0, 1)
+            );
         }
 
     public:

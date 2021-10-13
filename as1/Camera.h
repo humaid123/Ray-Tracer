@@ -7,61 +7,15 @@
 /*
 positionable camera => 
 give origin, view direction, up vector, height and aspect ratio of the image and it is able to cast rays...
+
+Peter Shirley asks for the field of view angle and the aspect ratio instead of the height and width...
+we can also take the origin and the point to look at and generate the view direction by lookat - lookfrom
+
+we also take the up vector and the focus dist for perspective viewing
+
+
 */
-/*
-class Camera {
-    public:
-        Camera(
-            Point3 origin,
-            Vec3 view_direction,
-            Vec3 vup,
-            float viewport_height,
-            float aspect_ratio
-        ) {
-            auto viewport_width = aspect_ratio * viewport_height;
 
-            w = view_direction;
-            w.normalize();
-
-            v = vup.cross(w);
-            v.normalize();
-
-            u = w.cross(v);
-            u.normalize();
-
-            // required for positionable camera
-            origin = origin;
-            horizontal = viewport_width * u;
-            vertical = viewport_height * v;
-            lower_left_corner = origin - horizontal/2 - vertical/2;
-        }
-
-        Ray cast_ray(Point3 pixelPos) const {
-            return Ray(origin, pixelPos.x()*u + pixelPos.y()*v -w - origin);
-
-            //return Ray(origin, lower_left_corner + pixelPos.x()*horizontal + pixelPos.y()*vertical - origin);
-            //return Ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
-        }
-
-    private:
-        Point3 origin;
-        Vec3 u, v, w;
-        Point3 lower_left_corner;
-        Vec3 horizontal;
-        Vec3 vertical;
-};*/
-
-inline double degrees_to_radians(double degrees) {
-    return degrees * pi / 180.0;
-}
-
-Vec3 random_in_unit_disk() {
-    while (true) {
-        auto p = Vec3(random_double(-1,1), random_double(-1,1), 0);
-        if (p.squaredNorm() >= 1) continue;
-        return p;
-    }
-}
 
 class Camera {
     public:
@@ -71,14 +25,15 @@ class Camera {
             Vec3   vup,
             double vfov, // vertical field-of-view in degrees
             double aspect_ratio,
-            double aperture,
             double focus_dist
         ) {
+            // get view height using the field of view angle => use the triangle formed from the origin, lookat and the 
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
             auto viewport_height = 2.0 * h;
             auto viewport_width = aspect_ratio * viewport_height;
 
+            // get a basis
             w = (lookfrom - lookat);
             w.normalize();
             u = vup.cross(w);
@@ -86,22 +41,18 @@ class Camera {
             v = w.cross(u);
             v.normalize();
 
+            // instead of using the basis as a normalised vector, we scale everything based on the 
             origin = lookfrom;
             horizontal = focus_dist * viewport_width * u;
             vertical = focus_dist * viewport_height * v;
             lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
-
-            lens_radius = aperture / 2;
         }
 
-
+        // the camera generates a ray given the pixel position / subpixel position and transforms it along the axis.
         Ray get_ray(double s, double t) const {
-            //Vec3 rd = lens_radius * random_in_unit_disk();
-            //Vec3 offset = u * rd.x() + v * rd.y();
-
             return Ray(
-                origin /*+ offset*/,
-                lower_left_corner + s*horizontal + t*vertical - origin /*- offset*/
+                origin,
+                lower_left_corner + s*horizontal + t*vertical - origin
             );
         }
 
@@ -111,7 +62,6 @@ class Camera {
         Vec3 horizontal;
         Vec3 vertical;
         Vec3 u, v, w;
-        double lens_radius;
 };
 
 #endif

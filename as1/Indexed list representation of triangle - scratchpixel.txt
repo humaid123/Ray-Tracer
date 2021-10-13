@@ -1,4 +1,0 @@
-
-triangle mesh => store as indexed list and do triangle intersection
-
-area light => you have a square as a light and each point on the square is a light source => square intersection emits light... we already know that...
