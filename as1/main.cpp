@@ -50,13 +50,14 @@ void cornell_box(HittableList& objects, LightSources& lights) {
 
     // Materials --- I made all materials have default ka, kd, km, ks, p that I wanted    
     auto glass = make_shared<Dielectric>(1.5); // refraction -> basically glass
-    auto fuzzy_red = make_shared<FuzzyMetal>(ue_red, 0.5);
+    auto fuzzy_red = make_shared<FuzzyMetal>(ue_red, 0.2);
     auto metal_red = make_shared<FuzzyMetal>(carmine_red, 0.1);
     auto matte_white = make_shared<Matte>(floral_white);
     auto matte_black = make_shared<Matte>(rich_black);
     auto metal_grey = make_shared<Metal>(chinese_grey); 
 
-    HittableList tmp;
+    HittableList tmp; // temporary list to build up BVH
+    
     // the sides => give range and k example => the plane x = k  is [y0, z0] [y1, z1] and k creates the plane
     tmp.add(make_shared<yz_rect>(0, cube_side, 0, cube_side, cube_side, matte_black));
     tmp.add(make_shared<yz_rect>(0, cube_side, 0, cube_side, 0, matte_white));
@@ -77,51 +78,41 @@ void cornell_box(HittableList& objects, LightSources& lights) {
     // small Matte sphere
     tmp.add(make_shared<Sphere>(Point3(90, 40, 60), 40, fuzzy_red));
 
-    // two small boxes
+    // two small rotated boxes
     tmp.add(
-        make_shared<rotate_y> (
-            make_shared<Box>(Point3(150, 360, 100), Point3(200, 410, 150), fuzzy_red, matte_white ),
-            45
+        make_shared<rotate_x> (
+            make_shared<rotate_y> (
+                //make_shared<Box>(Point3(100, 350, 400), Point3(150, 400, 450), metal_red, matte_black),
+                make_shared<Box>(Point3(200, 350, 350), Point3(250, 400, 400), metal_red, matte_black),
+                30
+            ),
+            300
         )
     );
 
     tmp.add(
         make_shared<rotate_y> (
-            make_shared<Box>(Point3(150, 360, 350), Point3(200, 420, 400), matte_black, fuzzy_red),
+            make_shared<rotate_z> (
+                make_shared<Box>(Point3(250, 360, 350), Point3(300, 420, 400), metal_red, matte_white),
+                45
+            ), 
             45
         )
     );
-    /*
-    // build on tree using all items that we can find a bouding box for.
-    objects.add(make_shared<BVH>(tmp));
 
-    // Could not find a way to put rotated objects in BVH => create bouding box on time
+    // big box inside the room with one side checkered
     auto num_squares_along_box = 3; // can change the grid pattern
-    auto box_size = 60;
+    auto box_size = 120;
     auto box_checker = make_shared<RectCheckerTexture>(floral_white, carmine_red, box_size, box_size, num_squares_along_box, num_squares_along_box);
-    objects.add(
-        make_shared<rotate_x> (
-            make_shared<rotate_y> (
-                make_shared<Box>(Point3(200, 400, 150), Point3(200 + box_size, 400+box_size, 150+box_size), make_shared<Matte>(box_checker), fuzzy_red),
-                45
-          ),
-          45
-        )
-    );*/
-
-    // New --- testing if rotate-x works with BVH now
-
-    // Could not find a way to put rotated objects in BVH => create bouding box on time
-    auto num_squares_along_box = 3; // can change the grid pattern
-    auto box_size = 60;
-    auto box_checker = make_shared<RectCheckerTexture>(floral_white, carmine_red, box_size, box_size, num_squares_along_box, num_squares_along_box);
+    //auto x = 200, y = 400, z = 150;
+    auto x = -20, y = 100, z = 350;
     tmp.add(
-        make_shared<rotate_x> (
+        make_shared<rotate_x>(
             make_shared<rotate_y> (
-                make_shared<Box>(Point3(200, 400, 150), Point3(200 + box_size, 400+box_size, 150+box_size), make_shared<Matte>(box_checker), fuzzy_red),
+                make_shared<Box>(Point3(x, y, z), Point3(x + box_size, y+box_size, z+box_size), make_shared<Matte>(box_checker), fuzzy_red),
                 45
-          ),
-          45
+            ),
+            315
         )
     );
 
@@ -132,13 +123,13 @@ void cornell_box(HittableList& objects, LightSources& lights) {
 int main(int, char**) {
     // Image
     const auto aspect_ratio = 1.0;
-    const int image_width = 400;
+    const int image_width = 1000;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
 
-    // use 4, 3, 4 or 3, 3, 3 during presentation...
-    const int samples_per_pixel = 4; // this needs to be a very big number to remove graininess, Peter used 10000, we need to consider bvh and cuda
-    const int max_depth = 3;
-    const int num_sample_lights = 4;
+    // use 3, 3, 3 with 400 width during presentation...
+    const int samples_per_pixel = 7;
+    const int max_depth = 5;
+    const int num_sample_lights = 8;
     // OpenCV (0, 0) is top-left = so I address the code by image(j, i)...
     Image image(image_height, image_width);
 

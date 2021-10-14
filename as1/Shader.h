@@ -107,12 +107,12 @@ private:
                 * rec.mat_ptr->emitted(rec.u, rec.v, rec.p) 
                 * ( 1 - std::max((float) 0.0, rec.normal.dot(light_vector)) );
 
-           /* 
+            
             Vec3 half_vector = view_vector + light_vector;
 
             emitted += rec.mat_ptr->ks *  
                         rec.mat_ptr->emitted(rec.u, rec.v, rec.p) * 
-                        std::pow(std::max((float)0.0, rec.normal.dot(half_vector)), rec.mat_ptr->p);*/
+                        std::pow(std::max((float)0.0, rec.normal.dot(half_vector)), rec.mat_ptr->p);
         }
         return emitted / (light_positions.size());
         return rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
