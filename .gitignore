@@ -1,5 +1,6 @@
 # ignore build folder
 /build
+/historyOfRenders
 
 # Prerequisites
 *.d

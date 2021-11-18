@@ -8,3 +8,14 @@ Final Render
 
 Render from inside the room
 ![alt text](https://github.com/humaid123/GraphicsProjects/blob/main/renders/HIGH%20QUALITY%20final%20render%20inside%20the%20room.png)
+
+Details:
+The ray tracer can render a Cornell box, spheres and cubes.
+
+It has different types of materials which allow the Blinn-Phong reflection model, light emission and refraction. 
+
+It uses anti-aliasing and area lights to prevent jagged edges and allows soft shadows.
+
+It uses instances to rotate any primitive around the x, y, z axes.
+
+It uses a BVH acceleration data structure to speed up the renders.
