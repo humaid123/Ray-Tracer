@@ -49,10 +49,6 @@ class Hittable {
         virtual std::string name() const = 0;
 
         virtual Vec3 random_surface_point() const = 0;
-        /* {
-            std::cerr << "Object " << name() << " does not support random_surface_point()\n";
-            return Vec3(0, 0, 0);
-        }*/
 };
 
 #endif
